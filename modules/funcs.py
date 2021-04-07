@@ -245,61 +245,6 @@ def gedc(t, C, A, sigma, tau, t_0):
 
 #upcoming block of functions are used for convoluting the exp and gaussian with fourier transform method.
 
-def ft_eq(t, X, omega = False, zero_centred = True, absolute = False):
-    """
-    Returns f, Fx, both same length as t and x
-    If omega is set to true, then omega is returned instead of f
-    If zero_centred, then 0 Hz is shifted to the centre of the spectrum (Default)
-    If absolute is true, abs(Fx) is returned instead of Fx
-    """
-    N = len(X)
-    dt = (t[-1]-t[0])/(N-1)
-    F_X = fft.fft(X)*dt # correct the FT by multiplying with dt 
-    
-    # Creating the omega axis - by default 0Hz is at the first entry of the array:
-    nu = fft.fftshift(fft.fftfreq(N,dt))
-    
-    # shifting 0 Hz to the centre of the spectrum
-    if zero_centred:
-        F_X = fft.fftshift(F_X)
-    else:
-        nu -= nu[0]
-        
-    if omega:
-        nu *= 2*pi
-        
-    if absolute:
-        F_X = abs(F_X)
-        
-    return nu, F_X
-
-
-def ift_eq(nu, F_X, omega = False, was_zero_centred = True):
-    """
-    Returns t, x, both same length as f and Fx
-    If omega is set to true, you can input omega instead of f. Then f = f/(2*pi) internally.
-    If your spectrum was not zero-centred, set was_zero_centred = False
-    Warning: Usually you would want to feed Fx into this fuction, not abs(Fx)!
-    """
-   
-    N = len(F_X)
-    dnu = (nu[-1]-nu[0])/(N-1)
-    
-    if omega:
-        dnu /= 2*pi
-    
-    t0 = fft.fftfreq(N, dnu)
-    t = fft.fftshift(t0)
-    t -= t[0]
-    
-    # ifft has a prefactor of 1/N so we need to correct for it by multipling with N*df
-    if was_zero_centred == 0:    
-        X = fft.ifft(F_X)*dnu*N
-    if was_zero_centred == 1:    
-        X = fft.ifft(fft.fftshift(F_X))*dnu*N
-    
-    return t, X
-
 def fourierfitfunc(t, C, A, sigma, tau, t_0):
     """
     This is the fit function using fourier method.
