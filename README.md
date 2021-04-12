@@ -35,9 +35,11 @@ Dependencies
   * [pytexit](https://github.com/erwanp/pytexit) -optional, used for double checking the formulas
   * [OpenCV on Wheels](https://pypi.org/project/opencv-python/) -only needed for polar coordinates fourier analysis -reconstructing images
   * [PyAbel](https://github.com/PyAbel/PyAbel) -only needed for polar coordinates fourier analysis
-  * [scikit-image](pip install scikit-image) -only needed for (experimental) 3d voxel plotting
-  * 
-# Important!
+  * [scikit-image](https://pypi.org/project/scikit-image/) -only needed for (experimental) 3d voxel plotting
+
+
+**Important!**
+
 PyAbel package should be installed directly from [project's GitHub page](https://github.com/PyAbel/PyAbel), following the guide. The version in Python Package Index (PyPI) do not contain the module \*.tools, which is used for polar coordinates reprojection.
 
 Future directions;
