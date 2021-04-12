@@ -7,6 +7,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 ![Last Commit](https://img.shields.io/github/last-commit/haltugyildirim/ARTOF-Data-Analysis)
+![Python](https://img.shields.io/badge/python-v3.6+-blue.svg)
 [![Github All Releases](https://img.shields.io/github/downloads/haltugyildirim/ARTOF-Data-Analysis/total.svg)]()
 
 
