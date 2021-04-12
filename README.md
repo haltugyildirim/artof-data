@@ -24,10 +24,9 @@ Dependencies
  Install the dependent packages with requirements. As the examples are with Jupyter Notebook, I recommend to use the package with [Anaconda](https://www.continuum.io/downloads).
  
  ```console
- $ pip install -U -r requirements
+ $ pip install -U -r requirements.txt
  ```
   * [NumPy](https://www.numpy.org/)
-  * [math](https://docs.python.org/3/library/math.html)
   * [SciPy](https://www.scipy.org/)
   * [Matplotlib](https://matplotlib.org/)
   * [h5py](https://pypi.org/project/h5py/)
