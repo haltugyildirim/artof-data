@@ -21,12 +21,14 @@ All the plotting is either done with build-in function from [xarray](https://git
 
 Dependencies
 ---
- Install the dependent packages with requirements. As the examples are with Jupyter Notebook, I recommend to use the package with [Anaconda](https://www.continuum.io/downloads) and create a dedicated environment for the usage:
+As the examples are with Jupyter Notebook, I recommend to use the package with [Anaconda](https://www.continuum.io/downloads) and create a dedicated environment for the usage:
 
  ```console
  $ conda create -n env_artof python=3.7
  $ conda activate env_artof
  ```
+
+ Install the dependent packages with requirements.
 
  ```console
  $ pip install -U -r requirements.txt
@@ -50,7 +52,7 @@ Future directions;
 ---
 
     * Deprecating the dataimport function for angle and combining both the momentum data import and
-    angle data import in one single function
+      angle data import in one single function
     * Rewrite the plotting functions for better readability
     * Import the angle to momentum conversion program to Python from C++
     * Possible inclusion of ARPES / HHG data and/or Momentum Microscope data
