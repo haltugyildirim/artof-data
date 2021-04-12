@@ -21,8 +21,13 @@ All the plotting is either done with build-in function from [xarray](https://git
 
 Dependencies
 ---
- Install the dependent packages with requirements. As the examples are with Jupyter Notebook, I recommend to use the package with [Anaconda](https://www.continuum.io/downloads).
- 
+ Install the dependent packages with requirements. As the examples are with Jupyter Notebook, I recommend to use the package with [Anaconda](https://www.continuum.io/downloads) and create a dedicated environment for the usage:
+
+ ```console
+ $ conda create -n env_artof python=3.7
+ $ conda activate env_artof
+ ```
+
  ```console
  $ pip install -U -r requirements.txt
  ```
@@ -44,7 +49,8 @@ PyAbel package should be installed directly from [project's GitHub page](https:/
 Future directions;
 ---
 
-    * Deprecating the dataimport function for angle and combining both the momentum data import and angle data import in one single function
+    * Deprecating the dataimport function for angle and combining both the momentum data import and
+    angle data import in one single function
     * Rewrite the plotting functions for better readability
     * Import the angle to momentum conversion program to Python from C++
     * Possible inclusion of ARPES / HHG data and/or Momentum Microscope data
@@ -53,5 +59,3 @@ Disclaimer
 ---
 
 As the data acquisition software is very problematic and old, many error comes during the experiment; crashing of the software, data omitting during saving etc. So this code in here also deals with this system specific problems. So if you want to use this piece of code in here, please consider asking me beforehand.
-
-
