@@ -7,6 +7,8 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 ![Last Commit](https://img.shields.io/github/last-commit/haltugyildirim/ARTOF-Data-Analysis)
+[![Github All Releases](https://img.shields.io/github/downloads/haltugyildirim/ARTOF-Data-Analysis/total.svg)]()
+
 
 This project is focused on reading, plotting and analyzing data from Angle-Resolved Time of Flight(ARTOF) experiments. ARTOF is an offshoot of ARPES systems where instead of using hemispherical analyzers, a time-of-flight tube coupled with a delay line detector is used. This gives an advantage to map band structure on both dimensions without any need to change the angle of the sample.
 
