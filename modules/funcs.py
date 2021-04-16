@@ -9,20 +9,15 @@ import datetime
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-# Energy correction values for angle-resolved data
-
-# This from a paper DOI:10.1103/PhysRevB.93.155426
-# As similar to dirac_point_data_energy, this value is also physical system specific.
+# dirac_point_origin_energy
+# For Sb2Te3 project this value is 0.15, it is taken from a paper DOI:10.1103/PhysRevB.93.155426
+# As similar to encor_var, this value is also physical system specific.
+#If you want to define the energy correction in respect to fermi energy, make this value 0 and just use 'encor_val'
+#for converted data(image or delay) in dataimport_conv, for angle-image in dataimport, for angle-delay in xc_fit.
 dirac_point_origin_energy = 0.15
 
-# This value is an approximate value for the angle-resolved mode. For momentum-converted data, value is given
-# as a default argument in the dataimport_conv function and should be changed by the user for appropriate physical system.
-dirac_point_data_energy = 1.65
 
-dif_dp = dirac_point_origin_energy-dirac_point_data_energy
-
-
-def dataimport_conv(name, grouphome_path_conv, exp_type, outer_correction=0.15, x_off=0, y_off=0, delay_cor='none', dirac_point_data_energy_var=1.65, x_corr=0, y_corr=0):
+def dataimport_conv(name, path, exp_type, outer_correction=0.15, x_off=0, y_off=0, delay_cor='none', encor_var=1.65, x_corr=0, y_corr=0):
     """
     Data import function for converted delay stage experiments and images. Outer correction is for masking the errors on the
     outer part of the converted data. It loads data from
@@ -50,7 +45,7 @@ def dataimport_conv(name, grouphome_path_conv, exp_type, outer_correction=0.15, 
     data is just an image, than one can correct the delay point to physical value rather than what
     the program is giving from the arbitrary value from delay stage.
 
-    dirac_point_data_energy_var -> This value should be selected by the user for appropriate physical system.
+    encor_var -> This value should be selected by the user for appropriate physical system.
     For the case of Sb2Te3 in energy conversion range of 1 to 3eV, this value is approximately ~1.65eV.
 
     x_corr                      -> Correction for kx values for indexing. This is useful, if the sample is
@@ -62,7 +57,7 @@ def dataimport_conv(name, grouphome_path_conv, exp_type, outer_correction=0.15, 
     """
 
     # hdf5 file reading
-    g = h5py.File(grouphome_path_conv+name, 'r')
+    g = h5py.File(path+name, 'r')
 
     # image matrix
     keys = list(g.keys())
@@ -110,7 +105,7 @@ def dataimport_conv(name, grouphome_path_conv, exp_type, outer_correction=0.15, 
                         'delay': delay, 'energy': energies, 'x_ncorr': k_values, 'y_ncorr': k_values})
 
     # energy correction calculation
-    dif_dp = dirac_point_origin_energy - dirac_point_data_energy_var
+    dif_dp = dirac_point_origin_energy - encor_var
 
     # corrections for energy, kx and ky
     data.coords['energy_corr'] = data.energy + dif_dp
@@ -244,7 +239,7 @@ def importdelaydata(keys, scan):
     return data
 
 
-def dataimport(name, grouphome_path, encor='corrected'):
+def dataimport(name, path, encor='corrected', encor_var=1.65):
     """
     This function is to load non-converted data(angle) from measurements. It loads data from
     hdf5 files, sorts it and returns an indexed matrix in DataArray format using xarray
@@ -270,7 +265,7 @@ def dataimport(name, grouphome_path, encor='corrected'):
     """
     # takes the name of the file as the file path
     # 'r' is for only reading the measurement data
-    g = h5py.File(grouphome_path+name, 'r')
+    g = h5py.File(path+name, 'r')
     # "every hdf5 file has a something called Group. Groups are the container mechanism
     # by which HDF5 files are organized. From a Python perspective, they operate somewhat
     # like dictionaries. In this case the “keys” are the names of group members, and the
@@ -299,6 +294,12 @@ def dataimport(name, grouphome_path, encor='corrected'):
     dim_off = np.array(image_obj.attrs['DIMENSION_OFFSETS'])
     dim_labels = np.array(image_obj.attrs['DIMENSION_LABELS'])
     dim_units = np.array(image_obj.attrs['DIMENSION_UNITS'])
+
+    # This value is an approximate value for the angle-resolved mode. For momentum-converted data, value is given
+    # as a default argument in the dataimport_conv function and should be changed by the user for appropriate physical system
+    # or sample.
+    dif_dp = dirac_point_origin_energy-encor_var
+
     if dim_fac.size == 3:
         # dataimport for 3d(image) files.
         # in deg
@@ -570,7 +571,7 @@ def half_max_x(x, y):
 # Functions below are used for cross-correlation fitting.
 
 
-def xc_fit(name, grouphome_path, slice_down, slice_up, sigma, tau, FWHM_pump, mode='corrected', crashset='none', encor='corrected'):
+def xc_fit(name, path, slice_down, slice_up, sigma, tau, FWHM_pump, mode='corrected', crashset='none', encor='corrected', encor_var = 1.65):
     """
     Cross correlation function to correct from arbitrary delay values of delay stage to real delay values. It first
     returns a plot of the energy-time, fit function guess and fit function itself, together with printed values of
@@ -649,10 +650,12 @@ def xc_fit(name, grouphome_path, slice_down, slice_up, sigma, tau, FWHM_pump, mo
     encor               -> user given value.
     """
 
+    dif_dp = dirac_point_origin_energy - encor_var
+
     if crashset != 'none':
         dataset = name
     else:
-        dataset = dataimport(name, grouphome_path)
+        dataset = dataimport(name, path)
 
     taken_value = 'delay'
 
@@ -1206,6 +1209,17 @@ def normalize_data(data):
     """
     return (data - np.min(data)) / (np.max(data) - np.min(data))
 
+def data_av(data_left, data_right, min_plot_num_en=0.1, max_plot_num_en=0.7):
+    """
+    This normalizes the higher dataset's count rate to lower dataset's count rate in selected regions of energy.
+    """
+    if data_right.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)).sum() > data_left.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)).sum():
+        data_left = data_left*(data_right.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)
+                                              ).sum()/data_left.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)).sum())
+    else:
+        data_right = data_right*(data_left.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)).sum(
+        )/data_right.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)).sum())
+    return data_left, data_right
 
 def ds_time_b(t_0, start, stop, steps, rep, expt):
     """
