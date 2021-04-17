@@ -21,7 +21,17 @@ All the plotting is either done with build-in function from [xarray](https://git
 
 Dependencies
 ---
-As the examples are with Jupyter Notebook, I recommend to use the package with [Anaconda](https://www.continuum.io/downloads) and create a dedicated environment for the usage:
+There are several ways to install the dependencies and package. Package dependencies can be installed together with a creating a conda environment. First download the files and inside the folder location, type in terminal:
+
+ ```console
+ $ conda env create -f environment.yml
+ ```
+This will install a conda environment with necessary packages. To activate the environment:
+
+ ```console
+ $ conda activate artof-env
+ ```
+Second method is to install the dependencies manually.For this method also, I recommend to use the package with [Anaconda](https://www.continuum.io/downloads) and create a dedicated environment for the usage:
 
  ```console
  $ conda create -n env_artof python=3.7
@@ -46,7 +56,7 @@ As the examples are with Jupyter Notebook, I recommend to use the package with [
 
 **Important!**
 
-PyAbel package should be installed directly from [project's GitHub page](https://github.com/PyAbel/PyAbel), following the guide. The version in Python Package Index (PyPI) do not contain the module \*.tools, which is used for polar coordinates reprojection.
+If you are installing manually, PyAbel package should be installed directly from [project's GitHub page](https://github.com/PyAbel/PyAbel), following the guide. The version in Python Package Index (PyPI) do not contain the module \*.tools, which is used for polar coordinates reprojection.
 
 Future directions;
 ---
@@ -56,6 +66,7 @@ Future directions;
     * Rewrite the plotting functions for better readability
     * Import the angle to momentum conversion program to Python from C++
     * Possible inclusion of ARPES / HHG data and/or Momentum Microscope data
+    * setup.py will be added to soon for packaging
 
 Disclaimer
 ---
