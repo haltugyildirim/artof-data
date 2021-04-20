@@ -1,7 +1,7 @@
 # Angle-resolved Time-of-Flight Data   & Analysis Module
 
 <p align="center">
-<img src="https://github.com/haltugyildirim/ARTOF-Data-Analysis/blob/main/images/drawing_plain_blue.svg" width="500" class="center" alt="logo"/>
+<img src="https://github.com/haltugyildirim/ARTOF-Data-Analysis/blob/main/images/drawing_plain.svg" width="500" class="center" alt="logo"/>
     <br/>
 </p>
 
