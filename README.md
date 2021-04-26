@@ -17,11 +17,14 @@ Data is binned as a hdf5 file, common in ARPES experiments. The character of dat
 
 Cross-correlation fitting; a method to find the length of ultrashort laser-pulses from delaypoints, is done with curve_fit from [SciPy](https://www.scipy.org/) using a convoluted version of an exponential decay and a gaussian.
 
-All the plotting is either done with build-in function from [xarray](https://github.com/pydata/xarray) or [Matplotlib](https://matplotlib.org/).
+All the plotting is either done with build-in function from [xarray](https://github.com/pydata/xarray) or [Matplotlib](https://matplotlib.org/) with [SciencePlots](https://github.com/garrettj403/SciencePlots) style in line plots.
 
-Dependencies
+Installation
 ---
-There are several ways to install the dependencies and package. Package dependencies can be installed together with a creating a conda environment. First download the files and inside the folder location, type in terminal:
+There are several ways to install the dependencies and package.
+
+
+*First method* Package dependencies can be installed together with a creating a conda environment, this is the easiest way. First download the files and inside the folder location, type in terminal:
 
  ```console
  $ conda env create -f environment.yml
@@ -31,7 +34,9 @@ This will install a conda environment with necessary packages. To activate the e
  ```console
  $ conda activate artof-env
  ```
-Second method is to install the dependencies manually.For this method also, I recommend to use the package with [Anaconda](https://www.continuum.io/downloads) and create a dedicated environment for the usage:
+
+
+*Second method* is to install the dependencies manually. For this method also, I recommend to use the package with [Anaconda](https://www.continuum.io/downloads) and create a dedicated environment for the usage:
 
  ```console
  $ conda create -n env_artof python=3.7
@@ -43,20 +48,22 @@ Second method is to install the dependencies manually.For this method also, I re
  ```console
  $ pip install -U -r requirements.txt
  ```
+
   * [NumPy](https://www.numpy.org/)
   * [SciPy](https://www.scipy.org/)
   * [Matplotlib](https://matplotlib.org/)
   * [h5py](https://pypi.org/project/h5py/)
   * [xarray](https://github.com/pydata/xarray)
-  * [pytexit](https://github.com/erwanp/pytexit) -optional, used for double checking the formulas
-  * [OpenCV on Wheels](https://pypi.org/project/opencv-python/) -only needed for polar coordinates fourier analysis -reconstructing images
-  * [PyAbel](https://github.com/PyAbel/PyAbel) -only needed for polar coordinates fourier analysis
-  * [scikit-image](https://pypi.org/project/scikit-image/) -only needed for (experimental) 3d voxel plotting
+  * [PyAbel](https://github.com/PyAbel/PyAbel) - only needed for polar coordinates fourier analysis
+  * [OpenCV on Wheels](https://pypi.org/project/opencv-python/) - only needed for polar coordinates fourier analysis -reconstructing images
+  * [scikit-image](https://pypi.org/project/scikit-image/) - only needed for (experimental) 3d voxel plotting
+  * [pytexit](https://github.com/erwanp/pytexit) -_optional_, used for double checking the formulas
+  * [SciencePlots](https://github.com/garrettj403/SciencePlots) - _optional_, pretty scientific plots
 
 
 **Important!**
 
-If you are installing manually, PyAbel package should be installed directly from [project's GitHub page](https://github.com/PyAbel/PyAbel), following the guide. The version in Python Package Index (PyPI) do not contain the module \*.tools, which is used for polar coordinates reprojection.
+If you are installing packages manually rather than using _requirements.txt_, PyAbel package should be installed directly from [project's GitHub page](https://github.com/PyAbel/PyAbel), following the guide. The version in Python Package Index (PyPI) do not contain the module \*.tools, which is used for polar coordinates reprojection.
 
 Future directions;
 ---
@@ -71,4 +78,4 @@ Future directions;
 Disclaimer
 ---
 
-As the data acquisition software is very problematic and old, many error comes during the experiment; crashing of the software, data omitting during saving etc. So this code in here also deals with this system specific problems. So if you want to use this piece of code in here, please consider asking me beforehand.
+As the data acquisition software is very problematic and old, many error comes during the experiment; crashing of the software, data omitting during saving etc. This code in here also deals with this system specific problems. So if you want to use this piece of code in here, please consider asking me beforehand.
