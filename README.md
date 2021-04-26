@@ -24,7 +24,7 @@ Installation
 There are several ways to install the dependencies and package.
 
 
-*First method* Package dependencies can be installed together with a creating a conda environment, this is the easiest way. First download the files and inside the folder location, type in terminal:
+**First method** Package dependencies can be installed together with a creating a conda environment, this is the easiest way. First download the files and inside the folder location, type in terminal:
 
  ```console
  $ conda env create -f environment.yml
@@ -36,7 +36,7 @@ This will install a conda environment with necessary packages. To activate the e
  ```
 
 
-*Second method* is to install the dependencies manually. For this method also, I recommend to use the package with [Anaconda](https://www.continuum.io/downloads) and create a dedicated environment for the usage:
+**Second method** is to install the dependencies manually. For this method also, I recommend to use the package with [Anaconda](https://www.continuum.io/downloads) and create a dedicated environment for the usage:
 
  ```console
  $ conda create -n env_artof python=3.7
