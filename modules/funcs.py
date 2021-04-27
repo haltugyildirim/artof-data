@@ -47,6 +47,10 @@ def dataimport_conv(name, path, exp_type, outer_correction=0.15, x_off=0, y_off=
 
     encor_var -> This value should be selected by the user for appropriate physical system.
     For the case of Sb2Te3 in energy conversion range of 1 to 3eV, this value is approximately ~1.65eV.
+    If you want to define the energy correction in respect to fermi energy, make dirac_point_origin_energy
+    inside 'funcs.py' value 0 and just use 'encor_val'. If you are doing experiments in another topological
+    insulators, change the dirac_point_origin_energy to appropriate for that system.
+    for converted data(image or delay) in dataimport_conv, for angle-image in dataimport, for angle-delay in xc_fit.
 
     x_corr                      -> Correction for kx values for indexing. This is useful, if the sample is
     not perfectly aligned in front of the detector. As the detector angle is \pm15 degrees and angle offset is
@@ -126,6 +130,8 @@ def dataimport_conv(name, path, exp_type, outer_correction=0.15, x_off=0, y_off=
     data.attrs['x_corr'] = x_corr
 
     data.attrs['y_corr'] = y_corr
+    
+    data.attrs['dif_dp'] = dif_dp
 
     # IMPORTANT! This tranpose is not happening in the data anymore, in order to have the chance the align the incoming
     # photon direction from the lower part of the energy-cut image data(x-y plane).
@@ -258,10 +264,13 @@ def dataimport(name, path, encor='corrected', encor_var=1.65):
     encor -> 'corrected' or none. When corrected selected the energy will be shifted by the global variable 'dif_dp',
     only for image type of data. For the delay data, energy correction is done inside the function 'xc_fit' together
     with delay correction.
-    This value should be selected by the user for appropriate physical system. For the case
-    of Sb2Te3 in energy conversion range of 1 to 3eV, this value is approximately ~1.65eV.
-    For angle data, this value can not be given as an optional argument as the converted data and should be change
-    inside 'funcs.py'.
+
+    encor_var -> This value should be selected by the user for appropriate physical system.
+    For the case of Sb2Te3 in energy conversion range of 1 to 3eV, this value is approximately ~1.65eV.
+    If you want to define the energy correction in respect to fermi energy, make dirac_point_origin_energy
+    inside 'funcs.py' value 0 and just use 'encor_val'. If you are doing experiments in another topological
+    insulators, change the dirac_point_origin_energy to appropriate for that system.
+    for converted data(image or delay) in dataimport_conv, for angle-image in dataimport, for angle-delay in xc_fit.
     """
     # takes the name of the file as the file path
     # 'r' is for only reading the measurement data
@@ -615,6 +624,13 @@ def xc_fit(name, path, slice_down, slice_up, sigma, tau, FWHM_pump, mode='correc
     of Sb2Te3 in energy conversion range of 1 to 3eV, this value is approximately ~1.65eV.
     For angle data, this value can not be given as an optional argument as the converted data and should be change
     inside 'funcs.py'.
+
+    encor_var -> This value should be selected by the user for appropriate physical system.
+    For the case of Sb2Te3 in energy conversion range of 1 to 3eV, this value is approximately ~1.65eV.
+    If you want to define the energy correction in respect to fermi energy, make dirac_point_origin_energy
+    inside 'funcs.py' value 0 and just use 'encor_val'. If you are doing experiments in another topological
+    insulators, change the dirac_point_origin_energy to appropriate for that system.
+    for converted data(image or delay) in dataimport_conv, for angle-image in dataimport, for angle-delay in xc_fit.
 
     returns:
 
@@ -1212,6 +1228,14 @@ def normalize_data(data):
 def data_av(data_left, data_right, min_plot_num_en=0.1, max_plot_num_en=0.7):
     """
     This normalizes the higher dataset's count rate to lower dataset's count rate in selected regions of energy.
+
+    data_left       -> left circular polarized data
+
+    data_right      -> left circular polarized data
+
+    min_plot_num_en -> lower energy value, which the normalization starts
+
+    max_plot_num_en -> higher energy value, which the normalization ends
     """
     if data_right.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)).sum() > data_left.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)).sum():
         data_left = data_left*(data_right.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)
