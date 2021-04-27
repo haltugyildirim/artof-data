@@ -3,6 +3,7 @@ import matplotlib as mp
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from scipy.constants import m_e, hbar, e
+from .funcs import data_av, binning
 
 
 SMALL_SIZE = 10
@@ -16,20 +17,6 @@ plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
 plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
-
-
-def data_av(data_left, data_right, min_plot_num_en=0.1, max_plot_num_en=0.7):
-    """
-    This normalizes the higher dataset's count rate to lower dataset's count rate.
-    """
-    if data_right.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)).sum() > data_left.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)).sum():
-        data_left = data_left*(data_right.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)
-                                              ).sum()/data_left.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)).sum())
-    else:
-        data_right = data_right*(data_left.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)).sum(
-        )/data_right.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)).sum())
-    return data_left, data_right
-
 
 def cdad_shc_just_func(data_right_binned, data_left_binned, min_plot_num_en, max_plot_num_en, av='on'):
     """
@@ -72,13 +59,17 @@ def cdad_svc_just_func(data_right_binned, data_left_binned, min_plot_num_en, max
 
         if max_plot_num_deg == min_plot_num_deg:
             data_rightsel = data_right_binned.sel(
+                    energy_corr=slice(min_plot_num_en, max_plot_num_en)).sel(
                 y=max_plot_num_deg, method="nearest")
             data_leftsel = data_left_binned.sel(
+                    energy_corr=slice(min_plot_num_en, max_plot_num_en)).sel(
                 y=max_plot_num_deg, method="nearest")
         else:
             data_rightsel = data_right_binned.sel(
+                    energy_corr=slice(min_plot_num_en, max_plot_num_en)).sel(
                 y=slice(min_plot_num_deg, max_plot_num_deg)).sum(dim='y')
             data_leftsel = data_left_binned.sel(
+                    energy_corr=slice(min_plot_num_en, max_plot_num_en)).sel(
                 y=slice(min_plot_num_deg, max_plot_num_deg)).sum(dim='y')
         cdad_left_right = (data_rightsel-data_leftsel) / \
             (data_rightsel+data_leftsel)
@@ -87,25 +78,32 @@ def cdad_svc_just_func(data_right_binned, data_left_binned, min_plot_num_en, max
 
         if max_plot_num_deg == min_plot_num_deg:
             data_rightsel = data_right_binned.sel(
+                    energy_corr=slice(min_plot_num_en, max_plot_num_en)).sel(
                 x=max_plot_num_deg, method="nearest")
             data_leftsel = data_left_binned.sel(
+                    energy_corr=slice(min_plot_num_en, max_plot_num_en)).sel(
                 x=max_plot_num_deg, method="nearest")
         else:
             data_rightsel = data_right_binned.sel(
+                    energy_corr=slice(min_plot_num_en, max_plot_num_en)).sel(
                 x=slice(min_plot_num_deg, max_plot_num_deg)).sum(dim='x')
             data_leftsel = data_left_binned.sel(
+                    energy_corr=slice(min_plot_num_en, max_plot_num_en)).sel(
                 x=slice(min_plot_num_deg, max_plot_num_deg)).sum(dim='x')
         cdad_left_right = (data_rightsel-data_leftsel) / \
             (data_rightsel+data_leftsel)
     return cdad_left_right
 
 
-def cdad_plot(data_right_binned, data_left_binned, length_subplot_in, min_plot_num_en, max_plot_num_en,
-              min_plot_num_deg, max_plot_num_deg, vmax_val='none', sing_val='none', av='on'):
+def cdad_plot(data_right, data_left, length_subplot_in, min_plot_num_en, max_plot_num_en,
+              min_plot_num_deg, max_plot_num_deg, bin_number_en,bin_number_xy, vmax_val='none', sing_val='none', av='on'):
     """
     Circular dichroism plots. To get single values in the range that user gave,
     give single_val another value than 'none'. vmax of the graphs also can be changed vmax_val.
     """
+
+    data_right_binned = binning(data_right, bin_number_en, bin_number_xy)
+    data_left_binned = binning(data_left, bin_number_en, bin_number_xy)
 
     print('count rate for right handed is;', data_right_binned.sum().values)
     print('count rate for left handed is;', data_left_binned.sum().values)
@@ -1002,4 +1000,47 @@ def onelinecut(data, energy_slice_down, energy_slice_up, line_cut_x, line_cut_y,
     plt.ylim(0, 0.8)
     plt.xlabel('$ \Theta_y$')
     plt.ylabel('$E-E_F (eV)$')
+    return
+
+
+def comparison_plot(data_right,data_left,min_plot_num_en,max_plot_num_en, x = 0, y = 0, dirac_energy = 0.15):
+    """
+    This for checking the newly converted data's correction values and orientation.
+    """
+    fig, axs = plt.subplots(2,2, figsize=(12,10))
+
+    data_right.sum(dim=('x','y')).plot(ax=axs[0,0],label='$ 0  \degree \circlearrowright$')
+    data_left.sum(dim= ('x','y')).plot(ax=axs[0,0],label='$ 90 \degree \circlearrowleft$')
+    axs[0,0].set_xlabel('$E-E_F (eV)$')
+    axs[0,0].set_ylabel('counts (a.u.)')
+    axs[0,0].legend()
+    axs[0,0].set_title(label = '')
+
+    data_right.sel(energy_corr=slice(
+        min_plot_num_en, max_plot_num_en)).sum(dim='energy_corr').plot(ax=axs[1,0])
+    axs[1,0].axvline(x = 0 ,color = 'r', linestyle = '--')
+    axs[1,0].axhline(y = 0 ,color = 'r', linestyle = '--')
+    axs[1,0].set_title(label = '')
+    axs[1,0].set_xlabel('$k_{ x}(\AA^{-1})$')
+    axs[1,0].set_ylabel('$k_{ y}(\AA^{-1})$')
+
+    data_right.sel(energy_corr=slice(0.08, 0.5)).sel(y=y, method="nearest").plot(ax=axs[0,1])
+    axs[0,1].axvline(x = 0 ,color = 'r', linestyle = '--')
+    axs[0,1].axhline(y = dirac_energy ,color = 'r', linestyle = '--')
+    axs[0,1].axhline(y = min_plot_num_en ,color = 'g', linestyle = '--')
+    axs[0,1].axhline(y = max_plot_num_en ,color = 'g', linestyle = '--')
+    axs[0,1].set_title(label = '')
+    axs[0,1].set_ylabel('$E-E_F (eV)$')
+    axs[0,1].set_xlabel('$k_{ y}(\AA^{-1})$')
+
+    data_right.sel(energy_corr=slice(0.08, 0.5)).sel(x=x, method="nearest").plot(ax=axs[1,1])
+    axs[1,1].axvline(x = 0 ,color = 'r', linestyle = '--')
+    axs[1,1].axhline(y = dirac_energy ,color = 'r', linestyle = '--')
+    axs[1,1].set_title(label = '')
+    axs[1,1].set_ylabel('$E-E_F (eV)$')
+    axs[1,1].set_xlabel('$k_{ x}(\AA^{-1})$')
+
+
+    plt.tight_layout()
+    
     return
