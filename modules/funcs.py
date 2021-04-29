@@ -1271,3 +1271,14 @@ def ds_time_b(t_0, start, stop, steps, rep, expt):
     print('Step size:', (stop-start)/steps)
     print('Exposure time per image:', rep*expt)
     return
+
+def namestr(obj, namespace):
+    """
+    Some 'hack' to get the name of the data to print on plots.
+    https://stackoverflow.com/questions/592746/how-can-you-print-a-variable-name-in-python
+    usage:
+    >>> a = 'some var'
+    >>> namestr(a, globals())
+    ['a']
+    """
+    return [name for name in namespace if namespace[name] is obj]
