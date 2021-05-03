@@ -130,7 +130,7 @@ def dataimport_conv(name, path, exp_type, outer_correction=0.15, x_off=0, y_off=
     data.attrs['x_corr'] = x_corr
 
     data.attrs['y_corr'] = y_corr
-    
+
     data.attrs['dif_dp'] = dif_dp
 
     # IMPORTANT! This tranpose is not happening in the data anymore, in order to have the chance the align the incoming
@@ -1282,3 +1282,21 @@ def namestr(obj, namespace):
     ['a']
     """
     return [name for name in namespace if namespace[name] is obj]
+
+def rotate_mapping(phase_initial):
+    """
+    'rotates' the phase values inside array. if the frequency is an odd number
+    it will add 1/2 of the frequency to phase angle if it is bigger than frequency/2,
+    otherwise it will substract it.
+    """
+    phase_rotated = np.zeros(phase_initial.size)
+
+    for i in range(phase_initial.size):
+        if (i+1) % 2 == 0:
+            phase_rotated[i] = phase_initial[i]
+        else:
+            if phase_initial[i] < (360 / (2*(i+1))):
+                phase_rotated[i] = ((360 / (2*(i+1))) + phase_initial[i])
+            else:
+                phase_rotated[i] = (phase_initial[i] - (360 / (2*(i+1))))
+    return phase_rotated
