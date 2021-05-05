@@ -14,7 +14,7 @@ import cv2
 import os
 
 from .funcs import find_nearest_index, mask_6fold_sym, ft_eq, sig_waveform, ift_eq
-from .plt_funcs import cdad_shc_just_func
+from .plt_funcs import cdad_shc_just_func, cdad_svc_just_func
 
 def data_selection_polar_fourier(right_data,left_data,min_plot_num_en,max_plot_num_en,data_type,mask,outer_rad,cone_wide = 30,inner_rad = 0):
     """
@@ -241,7 +241,29 @@ def find_component_transforms(nu,F_L_filt):
 
     return df_filt, df_1, df_2, df_3, df_12, df_23, df_13
 
-def polar_fourier_plot_func(right_data, datasel_xr, data_polar, phase, amplitude,  amplitude_filt, square_sig_01, data_fourier_all, rad_circ):
+
+def rotate_mapping(phase_initial):
+    """
+    'rotates' the phase values inside array. if the frequency is an odd number
+    it will add 1/2 of the frequency to phase angle if it is bigger than frequency/2,
+    otherwise it will substract it.
+    """
+    phase_rotated = np.zeros(phase_initial.size)
+
+    for i in range(phase_initial.size):
+        if (i+1) % 2 == 0:
+            phase_rotated[i] = phase_initial[i]
+        else:
+            if phase_initial[i] < (360 / (2*(i+1))):
+                phase_rotated[i] = ((360 / (2*(i+1))) + phase_initial[i])
+            else:
+                phase_rotated[i] = (phase_initial[i] - (360 / (2*(i+1))))
+    return phase_rotated
+
+def polar_fourier_plot_func(right_data, left_data, min_plot_num_en, max_plot_num_en, data_type, datasel_xr, data_polar, phase, amplitude,  amplitude_filt, square_sig_01, data_fourier_all, r_down,r_up, rad_circ):
+
+    zero_comp_indx = int(right_data.x.size/2)
+    phi_coord = data_polar.phi.values
     #Plotting
     #fig, axs = plt.subplots(4,2, figsize=(7,12))
     fig, axs = plt.subplots(2,5, figsize=(30,11))
@@ -293,21 +315,18 @@ def polar_fourier_plot_func(right_data, datasel_xr, data_polar, phase, amplitude
         data_polar.sel(r=slice(r_down,r_up)).plot(vmin=0, ax=axs[0,2])
     axs[0,2].set_xlabel('$\phi (\degree)$')
     axs[0,2].set_ylabel('r (a.u)')
-    axs[0,2].set_title('$%s$' % sample_name)
 
-    data_polar.sel(r=slice(r_down,r_up)).sum(dim='r').plot(ax=axs[1,2], color = raw_d_col)
+    data_polar.sel(r=slice(r_down,r_up)).sum(dim='r').plot(ax=axs[1,2])
     axs[1,2].set_xlabel('$\phi (\degree)$')
     axs[1,2].set_ylabel('counts (a.u)')
 
-    markerline, stemlines, baseline = axs[0,3].stem(nu_max_cyc,amplitude, linefmt='--', basefmt=raw_d_col)
+    markerline, stemlines, baseline = axs[0,3].stem(nu_max_cyc,amplitude, linefmt='--')
     plt.setp(stemlines, 'color', plt.getp(markerline,'color'))
     plt.setp(stemlines, 'linestyle', 'dotted')
     axs[0,3].set_xlim((0,10))
-    axs[0,3].set_title('delay: %s' % delay_input)
     axs[0,3].set_ylabel('Amplitude (a.u)')
     axs[0,3].set_xlabel('\# maxima /cycle')
     axs[0,3].set_xticks([0,1,2,3,4,5,6,7,8,9,10])
-    axs[0,3].set_title(direction_input)
 
     markerline, stemlines, baseline = axs[1,3].stem(
         nu_max_cyc,phase, 'g', markerfmt='go', linefmt='--')
@@ -315,27 +334,26 @@ def polar_fourier_plot_func(right_data, datasel_xr, data_polar, phase, amplitude
     plt.setp(stemlines, 'linestyle', 'dotted')
     axs[1,3].set_xlim((0,10))
     axs[1,3].set_xticks([0,1,2,3,4,5,6,7,8,9,10])
-    axs[1,3].set_title('delay: %s ' % delay_input)
     axs[1,3].set_ylabel('Phase ($\degree$)')
     axs[1,3].set_xlabel('\# maxima /cycle')
 
     markerline, stemlines, baseline = axs[0,4].stem(
-        nu_max_cyc,amplitude_filt, linefmt='--',label='filtered', basefmt=raw_d_col)
+        nu_max_cyc,amplitude_filt, linefmt='--',label='filtered')
     plt.setp(stemlines, 'color', plt.getp(markerline,'color'))
     plt.setp(stemlines, 'linestyle', 'dotted')
-    axs[0,4].plot(nu_max_cyc,square_sig_01,label='filter',color=df_1_col)
+    axs[0,4].plot(nu_max_cyc,square_sig_01,label='filter')
     axs[0,4].set_ylabel('Amplitude (a.u)')
     axs[0,4].set_xlabel('\# maxima /cycle')
     axs[0,4].set_xticks([0,1,2,3,4,5])
     axs[0,4].set_xlim((0,5))
     axs[0,4].legend()
 
-    data_polar.sel(r=slice(r_down,r_up)).sum(dim='r').plot(ax=axs[1,4], color = raw_d_col, label='raw')
-    axs[1,4].plot(phi_coord,data_fourier_all[0],label='filtered',color=df_filt_col)
-    axs[1,4].plot(phi_coord,data_fourier_all[6],label='1 \& 3',color=df_13_col)
-    axs[1,4].plot(phi_coord,data_fourier_all[1],label='1st',color=df_1_col)
-    axs[1,4].plot(phi_coord,data_fourier_all[2],label='2nd',color=df_2_col)
-    axs[1,4].plot(phi_coord,data_fourier_all[3],label='3rd',color=df_3_col)
+    data_polar.sel(r=slice(r_down,r_up)).sum(dim='r').plot(ax=axs[1,4], label='raw')
+    axs[1,4].plot(phi_coord,data_fourier_all[0],label='filtered')
+    axs[1,4].plot(phi_coord,data_fourier_all[6],label='1 \& 3')
+    axs[1,4].plot(phi_coord,data_fourier_all[1],label='1st')
+    axs[1,4].plot(phi_coord,data_fourier_all[2],label='2nd')
+    axs[1,4].plot(phi_coord,data_fourier_all[3],label='3rd')
     axs[1,4].axhline(y=0 ,color = 'black', linestyle = '--')
     axs[1,4].set_xlabel('$\phi (\degree)$')
     axs[1,4].set_ylabel('counts (a.u)')
