@@ -1271,32 +1271,3 @@ def ds_time_b(t_0, start, stop, steps, rep, expt):
     print('Step size:', (stop-start)/steps)
     print('Exposure time per image:', rep*expt)
     return
-
-def namestr(obj, namespace):
-    """
-    Some 'hack' to get the name of the data to print on plots.
-    https://stackoverflow.com/questions/592746/how-can-you-print-a-variable-name-in-python
-    usage:
-    >>> a = 'some var'
-    >>> namestr(a, globals())
-    ['a']
-    """
-    return [name for name in namespace if namespace[name] is obj]
-
-def rotate_mapping(phase_initial):
-    """
-    'rotates' the phase values inside array. if the frequency is an odd number
-    it will add 1/2 of the frequency to phase angle if it is bigger than frequency/2,
-    otherwise it will substract it.
-    """
-    phase_rotated = np.zeros(phase_initial.size)
-
-    for i in range(phase_initial.size):
-        if (i+1) % 2 == 0:
-            phase_rotated[i] = phase_initial[i]
-        else:
-            if phase_initial[i] < (360 / (2*(i+1))):
-                phase_rotated[i] = ((360 / (2*(i+1))) + phase_initial[i])
-            else:
-                phase_rotated[i] = (phase_initial[i] - (360 / (2*(i+1))))
-    return phase_rotated
