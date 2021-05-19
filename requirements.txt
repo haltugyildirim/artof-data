@@ -9,3 +9,4 @@ scipy==1.6.2
 xarray==0.17.0
 PyAbel @ https://github.com/PyAbel/PyAbel/archive/refs/tags/v0.8.3.tar.gz
 SciencePlots==1.0.7
+hvplot==0.7.1
