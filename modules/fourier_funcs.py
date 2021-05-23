@@ -16,7 +16,7 @@ import os
 from .funcs import find_nearest_index, mask_6fold_sym, ft_eq, sig_waveform, ift_eq
 from .plt_funcs import cdad_shc_just_func, cdad_svc_just_func
 
-def data_selection_polar_fourier(right_data,left_data,min_plot_num_en,max_plot_num_en,data_type,mask,outer_rad,cone_wide = 30,inner_rad = 0):
+def data_selection_polar_fourier(right_data,left_data,min_plot_num_en,max_plot_num_en,data_type,mask,outer_rad,cone_wide = 30,inner_rad = 0, av = 'off'):
     """
     Data selection for the polar fourier analysis.
     cone_wide ->  cone wide should always be 30 as this uses the 6fold masking function(under module/funcs),
@@ -27,9 +27,9 @@ def data_selection_polar_fourier(right_data,left_data,min_plot_num_en,max_plot_n
     #If the dataset is delay, than this part is for selection of the corresponding part of data. Otherwise
     #(image or dichroism) this justget rid of the extra coordinate of delay, that only carries a single value
     if data_type == 'dichroism':
-        data_in = cdad_shc_just_func(right_data,left_data,min_plot_num_en,max_plot_num_en,av='off').sum(dim='delay')
+        data_in = cdad_shc_just_func(right_data,left_data,min_plot_num_en,max_plot_num_en,av=av).sum(dim='delay')
     elif data_type == 'delay':
-        data_in = right_data.sel(delay_corr = delay_input, method="nearest")
+        data_in = right_data.sel(Delay = delay_input, method="nearest")
     else:
         data_in = right_data.sum(dim='delay')
 
@@ -49,11 +49,11 @@ def data_selection_polar_fourier(right_data,left_data,min_plot_num_en,max_plot_n
             datasel_xr = data_in
     else:
         if mask == 'circular':
-            datasel_xr = data_in.sel(energy_corr=slice(
-                min_plot_num_en,max_plot_num_en)).sum(dim='energy_corr').where(
+            datasel_xr = data_in.sel(Energy=slice(
+                min_plot_num_en,max_plot_num_en)).sum(dim='Energy').where(
                 mask_6fold_sym(data_in.x.size,data_in.y.size,origin,inner_rad,outer_rad,0,cone_wide),0)
         else:
-            datasel_xr = data_in.sel(energy_corr=slice(min_plot_num_en,max_plot_num_en)).sum(dim='energy_corr')
+            datasel_xr = data_in.sel(Energy=slice(min_plot_num_en,max_plot_num_en)).sum(dim='Energy')
 
     return datasel_xr, origin
 
@@ -125,7 +125,7 @@ def find_fourier(data_fourier,filter_width = 0.13,filter_small_comp = 'none', fi
 
     return nu, F_L, F_L_filt, square_sig_01
 
-def find_phase_deg(F_L):
+def find_phase_deg(F_L, filter_high = 'none'):
     """
     This function finds the phases of the Fourier components in range of [0,2pi) for
     a polar mapping.
@@ -139,7 +139,8 @@ def find_phase_deg(F_L):
 
     #filter of the phase values that absolute value of Fourier transform is smaller than 1,
     #which corresponds to noise.
-    phase_neg[np.abs(F_L) < 1] = 0
+    if filter_high != 'none':
+        phase_neg[np.abs(F_L) < 1] = 0
 
     #finding the real 'readable' phase is trickier than it seems.
     phase = np.zeros(data_size)
@@ -271,13 +272,13 @@ def polar_fourier_plot_func(right_data, left_data, min_plot_num_en, max_plot_num
     #plotting the frequency x values as the number of maxima per signal
     nu_max_cyc = np.arange(int(-1*zero_comp_indx), zero_comp_indx)
 
-    cdad_svc_just_func(right_data,left_data,0.25,0.6, -0.01, 0.01, 'y',av='off').plot(ax=axs[0,0])
+    cdad_svc_just_func(right_data,left_data,0.25,0.6, -0.01, 0.01, 'y',av='off').plot(ax=axs[0,0],rasterized=True)
     axs[0,0].axhline(y=min_plot_num_en ,color = 'r', linestyle = '--')
     axs[0,0].axhline(y=max_plot_num_en ,color = 'r', linestyle = '--')
     axs[0,0].set_xlabel('$k_x$')
     axs[0,0].set_ylabel('$E-E_F (eV)$')
 
-    right_data.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)).sum(dim='energy_corr').plot(ax=axs[1,0])
+    right_data.sel(Energy=slice(min_plot_num_en, max_plot_num_en)).sum(dim='Energy').plot(ax=axs[1,0],rasterized=True)
     axs[1,0].set_xlabel('$k_x$')
     axs[1,0].set_ylabel('$k_y$')
     #to determine the radius of the presented circle. it needs an if conditions because of the circular masks
@@ -294,7 +295,7 @@ def polar_fourier_plot_func(right_data, left_data, min_plot_num_en, max_plot_num
     circle = plt.Circle((0, 0), rad_circ, color='r', linestyle = '--', fill=False)
     axs[1,0].add_patch(circle)
 
-    datasel_xr.plot(ax=axs[0,1])
+    datasel_xr.plot(ax=axs[0,1],rasterized=True)
     axs[0,1].set_title('Cartesian')
     axs[0,1].set_xlabel('$k_x$')
     axs[0,1].set_ylabel('$k_y$')
@@ -302,17 +303,17 @@ def polar_fourier_plot_func(right_data, left_data, min_plot_num_en, max_plot_num
     axs[0,1].axhline(y = 0 ,color = 'r', linestyle = '--')
 
     if data_type == 'dichroism':
-        data_polar.plot(ax=axs[1,1])
+        data_polar.plot(ax=axs[1,1],rasterized=True)
     else:
-        data_polar.plot(vmin=0, ax=axs[1,1])
+        data_polar.plot(vmin=0, ax=axs[1,1],rasterized=True)
     axs[1,1].set_title('Polar')
     axs[1,1].set_xlabel('$\phi (\degree)$')
     axs[1,1].set_ylabel('r (a.u)')
 
     if data_type == 'dichroism':
-        data_polar.sel(r=slice(r_down,r_up)).plot(ax=axs[0,2])
+        data_polar.sel(r=slice(r_down,r_up)).plot(ax=axs[0,2],rasterized=True)
     else:
-        data_polar.sel(r=slice(r_down,r_up)).plot(vmin=0, ax=axs[0,2])
+        data_polar.sel(r=slice(r_down,r_up)).plot(vmin=0, ax=axs[0,2],rasterized=True)
     axs[0,2].set_xlabel('$\phi (\degree)$')
     axs[0,2].set_ylabel('r (a.u)')
 
