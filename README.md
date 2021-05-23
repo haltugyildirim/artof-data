@@ -68,8 +68,6 @@ If you are installing packages manually rather than using _requirements.txt_, Py
 Future directions;
 ---
 
-    * Deprecating the dataimport function for angle and combining both the momentum data import and
-      angle data import in one single function
     * Rewrite the plotting functions for better readability
     * Import the angle to momentum conversion program to Python from C++
     * Possible inclusion of ARPES / HHG data and/or Momentum Microscope data
