@@ -9,30 +9,45 @@ import datetime
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-# dirac_point_origin_energy
-# For Sb2Te3 project this value is 0.15, it is taken from a paper DOI:10.1103/PhysRevB.93.155426
+# DIRAC_POINT_ORIGIN_ENERGY
+# For Sb2Te3 project this value is 0.15, it is taken from the paper DOI:10.1103/PhysRevB.93.155426
 # As similar to encor_var, this value is also physical system specific.
-#If you want to define the energy correction in respect to fermi energy, make this value 0 and just use 'encor_val'
-#for converted data(image or delay) in dataimport_conv, for angle-image in dataimport, for angle-delay in xc_fit.
-dirac_point_origin_energy = 0.15
+# If you want to define the energy correction in respect to fermi energy, make this value 0 and just use 'encor_val'
+# with accessing it via 'funcs.DIRAC_POINT_ORIGIN_ENERGY = 0.15' inside your code/notebook.
+# for converted data(image or delay) in dataimport_conv, for angle-image in dataimport, for angle-delay in xc_fit.
+DIRAC_POINT_ORIGIN_ENERGY = 0.15
 
+#def dataimport_ang(name, path, encor='corrected', encor_var=1.65):
+#dataimport_conv(name, path, exp_type, outer_correction=0.15, x_off=0, y_off=0, delay_cor='none', encor_var=1.65, x_corr=0, y_corr=0):
 
-def dataimport_conv(name, path, exp_type, outer_correction=0.15, x_off=0, y_off=0, delay_cor='none', encor_var=1.65, x_corr=0, y_corr=0):
+def dataimport(name, path, data_type, exp_type, encor='corrected', delay_cor='none', outer_correction=0.15, x_off=0, y_off=0, encor_var=1.65, x_corr=0, y_corr=0):
     """
-    Data import function for converted delay stage experiments and images. Outer correction is for masking the errors on the
-    outer part of the converted data. It loads data from
+    Data import function for delay stage experiments and images. It loads data from
     hdf5 files, sorts it and returns an indexed matrix in DataArray format using xarray
     package. This matrix is a 4d object, a delay scan or image respectively. In both cases it returns a DataArray
     with 4d matrix. For more information about DataArray and DataSet format refer to documentation of xarray package.
     Returns a DataArray object.
 
+    For angle-converted data:
+    If it contains several repetitions of a delay scan, it returns a DataSet with
+    all repeated measurements as DataArray inside the DataFrame and a separate DataArray
+    with all repetition matrices summed up to use for better statistics. If the masurement
+    is a an image, it returns a DataArray with 3d matrix.
+
     name                        -> name of the data
 
     path                        -> path to data
 
-    exp_type                    -> 'image' or other. This can be either a delay experiment or an image.
+    data_type                   -> 'momentum' or 'angle'. for 'momentum' and 'angle' converted data, the import
+    prodecure is different and should be chosen accordingly.
+
+    exp_type                    -> 'image' or 'delay'. This can be either a delay experiment or an image.
     Both of the objects are 4D but the image has only a single value on 1 dimension and delay experiment
     has the number of values as much as the experiments step size.
+
+    encor                       -> 'corrected' or none. When corrected selected the energy will be shifted by the global
+    variable 'dif_dp', only for image type of data. For the delay data, energy correction is done inside the function
+    'xc_fit' together with delay correction. Only called for angle-converted data.
 
     outer_correction            -> for masking the errors on the outer part of the converted data with
     creating a paraboloid mask.
@@ -47,9 +62,9 @@ def dataimport_conv(name, path, exp_type, outer_correction=0.15, x_off=0, y_off=
 
     encor_var -> This value should be selected by the user for appropriate physical system.
     For the case of Sb2Te3 in energy conversion range of 1 to 3eV, this value is approximately ~1.65eV.
-    If you want to define the energy correction in respect to fermi energy, make dirac_point_origin_energy
+    If you want to define the energy correction in respect to fermi energy, make DIRAC_POINT_ORIGIN_ENERGY
     inside 'funcs.py' value 0 and just use 'encor_val'. If you are doing experiments in another topological
-    insulators, change the dirac_point_origin_energy to appropriate for that system.
+    insulators, change the DIRAC_POINT_ORIGIN_ENERGY to appropriate for that system.
     for converted data(image or delay) in dataimport_conv, for angle-image in dataimport, for angle-delay in xc_fit.
 
     x_corr                      -> Correction for kx values for indexing. This is useful, if the sample is
@@ -58,6 +73,16 @@ def dataimport_conv(name, path, exp_type, outer_correction=0.15, x_off=0, y_off=
     this correction during the angle to momentum conversion.
 
     y_corr                      -> Correction for ky values for indexing.
+    """
+    if data_type == 'momentum':
+        data = dataimport_conv(name, path, exp_type, outer_correction, x_off, y_off, delay_cor, encor_var, x_corr, y_corr)
+    elif data_type == 'angle':
+        data = dataimport_ang(name, path, encor, encor_var, delay_cor)
+    return data
+
+def dataimport_conv(name, path, exp_type, outer_correction=0.15, x_off=0, y_off=0, delay_cor='none', encor_var=1.65, x_corr=0, y_corr=0):
+    """
+    This function is called inside the dataimport function for converted data.
     """
 
     # hdf5 file reading
@@ -105,15 +130,19 @@ def dataimport_conv(name, path, exp_type, outer_correction=0.15, x_off=0, y_off=
         k_values = k_values[:-1]
 
     # creating DataArray object
-    data = xr.DataArray(scanimage, dims=['delay', 'energy', 'x_ncorr', 'y_ncorr'], coords={
+    if exp_type == 'image':
+        data = xr.DataArray(scanimage, dims=['Delay', 'energy', 'x_ncorr', 'y_ncorr'], coords={
+                        'Delay': delay, 'energy': energies, 'x_ncorr': k_values, 'y_ncorr': k_values})
+    else:
+        data = xr.DataArray(scanimage, dims=['delay', 'energy', 'x_ncorr', 'y_ncorr'], coords={
                         'delay': delay, 'energy': energies, 'x_ncorr': k_values, 'y_ncorr': k_values})
 
     # energy correction calculation
-    dif_dp = dirac_point_origin_energy - encor_var
+    dif_dp = DIRAC_POINT_ORIGIN_ENERGY - encor_var
 
     # corrections for energy, kx and ky
-    data.coords['energy_corr'] = data.energy + dif_dp
-    data = data.swap_dims({'energy': 'energy_corr'})
+    data.coords['Energy'] = data.energy + dif_dp
+    data = data.swap_dims({'energy': 'Energy'})
 
     data.coords['x'] = (data.x_ncorr / 10) + x_corr
     data = data.swap_dims({'x_ncorr': 'x'})
@@ -138,7 +167,7 @@ def dataimport_conv(name, path, exp_type, outer_correction=0.15, x_off=0, y_off=
 
     # compared to angle-data, x and y is inverted in converted-data, but this can cause misunderstandings, thus we
     # transpose between x and y dimensions.
-    #data = data.transpose('delay', 'energy_corr', 'y', 'x')
+    #data = data.transpose('delay', 'Energy', 'y', 'x')
 
     return data
 
@@ -245,32 +274,10 @@ def importdelaydata(keys, scan):
     return data
 
 
-def dataimport(name, path, encor='corrected', encor_var=1.65):
+def dataimport_ang(name, path, encor='corrected', encor_var=1.65, delay_cor='none'):
     """
-    This function is to load non-converted data(angle) from measurements. It loads data from
-    hdf5 files, sorts it and returns an indexed matrix in DataArray format using xarray
-    package. This matrix can be either in 4d or 3d, a delay scan or image respectively.
-    If it contains several repetitions of a delay scan, it returns a DataSet with
-    all repeated measurements as DataArray inside the DataFrame and a separate DataArray
-    with all repetition matrices summed up to use for better statistics. If the masurement
-    is a an image, it returns a DataArray with 3d matrix. For more information about DataArray
-    and DataSet format refer to documentation of xarray package.
-    Returns a DataArray object.
-
-    name  -> name of the data
-
-    path  -> path to data
-
-    encor -> 'corrected' or none. When corrected selected the energy will be shifted by the global variable 'dif_dp',
-    only for image type of data. For the delay data, energy correction is done inside the function 'xc_fit' together
-    with delay correction.
-
-    encor_var -> This value should be selected by the user for appropriate physical system.
-    For the case of Sb2Te3 in energy conversion range of 1 to 3eV, this value is approximately ~1.65eV.
-    If you want to define the energy correction in respect to fermi energy, make dirac_point_origin_energy
-    inside 'funcs.py' value 0 and just use 'encor_val'. If you are doing experiments in another topological
-    insulators, change the dirac_point_origin_energy to appropriate for that system.
-    for converted data(image or delay) in dataimport_conv, for angle-image in dataimport, for angle-delay in xc_fit.
+    This function is called inside the dataimport function for converted data to load non-converted
+    data(angle-converted) from measurements.
     """
     # takes the name of the file as the file path
     # 'r' is for only reading the measurement data
@@ -307,7 +314,7 @@ def dataimport(name, path, encor='corrected', encor_var=1.65):
     # This value is an approximate value for the angle-resolved mode. For momentum-converted data, value is given
     # as a default argument in the dataimport_conv function and should be changed by the user for appropriate physical system
     # or sample.
-    dif_dp = dirac_point_origin_energy-encor_var
+    dif_dp = DIRAC_POINT_ORIGIN_ENERGY-encor_var
 
     if dim_fac.size == 3:
         # dataimport for 3d(image) files.
@@ -320,18 +327,29 @@ def dataimport(name, path, encor='corrected', encor_var=1.65):
         # in eV
         energies = (np.arange(
             0, scanimage.shape[0])*scanimage.shape[0]/(scanimage.shape[0]-1)*dim_fac[0]-dim_off[0])
+
+        #if no delay_cor given number '99999' is an arbitrary number for delay.
+        if delay_cor != 'none':
+            delay = np.array([delay_cor])
+        else:
+            delay = np.array([99999])
+
         data = xr.DataArray(scanimage, dims=['energy', 'y', 'x'], coords={
                             'energy': energies, 'y': angles_y, 'x': angles_x})
+
+        data = data.expand_dims({'Delay':delay})
+
         data.attrs['Sample Name'] = keys
         data.attrs['Type'] = 'Image'
         if encor != 'none':
             # this is energy correction, referenced to dirac point.
-            data.coords['energy_corr'] = data.energy + dif_dp
-            data = data.swap_dims({'energy': 'energy_corr'})
+            data.coords['Energy'] = data.energy + dif_dp
+            data = data.swap_dims({'energy': 'Energy'})
     else:
         # dataimport for 4d(delay) files.
         data = importdelaydata(keys, scan)
-    return(data)
+
+    return data
 
 ############################################################################################
 ############################################################################################
@@ -580,7 +598,7 @@ def half_max_x(x, y):
 # Functions below are used for cross-correlation fitting.
 
 
-def xc_fit(name, path, slice_down, slice_up, sigma, tau, FWHM_pump, mode='corrected', crashset='none', encor='corrected', encor_var = 1.65):
+def xc_fit(name, path, slice_down, slice_up, sigma, tau, FWHM_pump, mode='corrected', crashset='none', encor='corrected', encor_var = 1.65, plot_xc = True):
     """
     Cross correlation function to correct from arbitrary delay values of delay stage to real delay values. It first
     returns a plot of the energy-time, fit function guess and fit function itself, together with printed values of
@@ -627,10 +645,13 @@ def xc_fit(name, path, slice_down, slice_up, sigma, tau, FWHM_pump, mode='correc
 
     encor_var -> This value should be selected by the user for appropriate physical system.
     For the case of Sb2Te3 in energy conversion range of 1 to 3eV, this value is approximately ~1.65eV.
-    If you want to define the energy correction in respect to fermi energy, make dirac_point_origin_energy
+    If you want to define the energy correction in respect to fermi energy, make DIRAC_POINT_ORIGIN_ENERGY
     inside 'funcs.py' value 0 and just use 'encor_val'. If you are doing experiments in another topological
-    insulators, change the dirac_point_origin_energy to appropriate for that system.
+    insulators, change the DIRAC_POINT_ORIGIN_ENERGY to appropriate for that system.
     for converted data(image or delay) in dataimport_conv, for angle-image in dataimport, for angle-delay in xc_fit.
+
+    plot_xc             -> False or True. If True, it will plot the xc_fits and print the sigma, FWHM etc. values.
+
 
     returns:
 
@@ -666,19 +687,19 @@ def xc_fit(name, path, slice_down, slice_up, sigma, tau, FWHM_pump, mode='correc
     encor               -> user given value.
     """
 
-    dif_dp = dirac_point_origin_energy - encor_var
+    dif_dp = DIRAC_POINT_ORIGIN_ENERGY - encor_var
 
     if crashset != 'none':
         dataset = name
     else:
-        dataset = dataimport(name, path)
+        dataset = dataimport(name, path, 'angle', 'delay')
 
     taken_value = 'delay'
 
     if encor != 'converted':
         # this is energy correction, referenced to dirac point.
-        dataset.coords['energy_corr'] = dataset.energy + dif_dp
-        dataset = dataset.swap_dims({'energy': 'energy_corr'})
+        dataset.coords['Energy'] = dataset.energy + dif_dp
+        dataset = dataset.swap_dims({'energy': 'Energy'})
 
     # if the mode is 'corrected', it will map delay scan values to a new array where fitted
     # t_0 value is zero.
@@ -687,9 +708,9 @@ def xc_fit(name, path, slice_down, slice_up, sigma, tau, FWHM_pump, mode='correc
             dataset, slice_down, slice_up, sigma, tau, taken_value, encor)
 
         # changing the
-        dataset.coords['delay_corr'] = dataset.delay - parameter_space[1]
-        dataset = dataset.swap_dims({'delay': 'delay_corr'})
-        taken_value = 'delay_corr'
+        dataset.coords['Delay'] = dataset.delay - parameter_space[1]
+        dataset = dataset.swap_dims({'delay': 'Delay'})
+        taken_value = 'Delay'
         t_0 = -1*parameter_space[1]
 
     parameter_space_1 = xc_fit_rep(
@@ -711,45 +732,46 @@ def xc_fit(name, path, slice_down, slice_up, sigma, tau, FWHM_pump, mode='correc
     FWHM_xc = 2*np.sqrt(2*np.log(2))*sigma
     FWHM_probe = np.sqrt(FWHM_xc**2-FWHM_pump**2)
 
-    # print values
-    print('$sigma=$', sigma)
-    print('$tau=$', tau)
-    print('$t_{0}=$', t_0)
-    print('$FWHM_{xc}=$', FWHM_xc)
-    print('$FWHM_{probe}=$', FWHM_probe)
+    if plot_xc == True :
+        # print values
+        print('$sigma=$', sigma)
+        print('$tau=$', tau)
+        print('$t_{0}=$', t_0)
+        print('$FWHM_{xc}=$', FWHM_xc)
+        print('$FWHM_{probe}=$', FWHM_probe)
 
-    # plotting
-    gs = gridspec.GridSpec(2, 2)
+        # plotting
+        gs = gridspec.GridSpec(2, 2)
 
-    plt.figure()
-    ax = plt.subplot(gs[0, :])  # row 0, span all columns
-    datasetsum.sum(dim=('y', 'x')).T.plot()
-    plt.axhline(y=slice_down, color='r', linestyle='--')
-    plt.axhline(y=slice_up, color='r', linestyle='--')
-    plt.xlabel('delay (fs)')
-    plt.ylabel('$E-E_F (eV)$')
+        plt.figure()
+        ax = plt.subplot(gs[0, :])  # row 0, span all columns
+        datasetsum.sum(dim=('y', 'x')).T.plot()
+        plt.axhline(y=slice_down, color='r', linestyle='--')
+        plt.axhline(y=slice_up, color='r', linestyle='--')
+        plt.xlabel('delay (fs)')
+        plt.ylabel('$E-E_F (eV)$')
 
-    ax = plt.subplot(gs[1, 0])  # row 1, col 0
-    plt.plot(t, f_ig, label='fit with initial guess')
-    plt.plot(delayvaluesasarrays, countvaluesasarray, label='data')
-    plt.xlabel('delay (fs)')
-    plt.ylabel('counts')
-    plt.legend()
+        ax = plt.subplot(gs[1, 0])  # row 1, col 0
+        plt.plot(t, f_ig, label='fit with initial guess')
+        plt.plot(delayvaluesasarrays, countvaluesasarray, label='data')
+        plt.xlabel('delay (fs)')
+        plt.ylabel('counts')
+        plt.legend()
 
-    ax = plt.subplot(gs[1, 1])  # row 1, col 1
-    plt.plot(t, f_fit, label='fit')
-    plt.plot(delayvaluesasarrays, countvaluesasarray, label='data')
-    plt.xlabel('delay (fs)')
-    plt.ylabel('counts')
+        ax = plt.subplot(gs[1, 1])  # row 1, col 1
+        plt.plot(t, f_fit, label='fit')
+        plt.plot(delayvaluesasarrays, countvaluesasarray, label='data')
+        plt.xlabel('delay (fs)')
+        plt.ylabel('counts')
 
-    if encor == 'converted' and \
-       crashset != 'none':
-        plt.suptitle('delay cross-correlation')
-    else:
-        plt.suptitle(name)
+        if encor == 'converted' and \
+           crashset != 'none':
+            plt.suptitle('delay cross-correlation')
+        else:
+            plt.suptitle(name)
 
-    plt.tight_layout()
-    plt.legend()
+        plt.tight_layout()
+        plt.legend()
 
     return sigma, FWHM_xc, FWHM_probe, datasetsum, slice_down, slice_up, delayvaluesasarrays, countvaluesasarray, t, f_ig, f_fit, tau, dataset, t_0, encor
 
@@ -768,7 +790,7 @@ def xc_fit_rep(dataset, slice_down, slice_up, sigma, tau, taken_value, encor):
 
     if encor != 'none':
         selectedxc = datasetsum.sum(dim=('y', 'x')).sel(
-            energy_corr=slice(slice_down, slice_up)).sum(dim='energy_corr')
+            Energy=slice(slice_down, slice_up)).sum(dim='Energy')
     else:
         selectedxc = datasetsum.sum(dim=('y', 'x')).sel(
             energy=slice(slice_down, slice_up)).sum(dim='energy')
@@ -1187,7 +1209,7 @@ def binning(data, bin_number_en, bin_number_xy):
     # binning energy values
     # binning to lower values of original bin, have to be integer multiplier of the original bin value.
     # Want to make it a function if i find a way to put variables inside xarray functions.
-    if data.energy_corr.size < bin_number_en or \
+    if data.Energy.size < bin_number_en or \
             data.x.size < bin_number_xy:
 
         print('Please choose a lower value than binning of the current data!')
@@ -1196,8 +1218,8 @@ def binning(data, bin_number_en, bin_number_xy):
     else:
 
         rebin = bin_number_en
-        rbmp = int(data['energy_corr'].size/rebin)
-        data_binned = data.coarsen(energy_corr=rbmp).sum()
+        rbmp = int(data['Energy'].size/rebin)
+        data_binned = data.coarsen(Energy=rbmp).sum()
 
         # binning x-y values
         # binning to lower values of original bin, have to be integer multiplier of the original bin value.
@@ -1237,12 +1259,12 @@ def data_av(data_left, data_right, min_plot_num_en=0.1, max_plot_num_en=0.7):
 
     max_plot_num_en -> higher energy value, which the normalization ends
     """
-    if data_right.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)).sum() > data_left.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)).sum():
-        data_left = data_left*(data_right.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)
-                                              ).sum()/data_left.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)).sum())
+    if data_right.sel(Energy=slice(min_plot_num_en, max_plot_num_en)).sum() > data_left.sel(Energy=slice(min_plot_num_en, max_plot_num_en)).sum():
+        data_left = data_left*(data_right.sel(Energy=slice(min_plot_num_en, max_plot_num_en)
+                                              ).sum()/data_left.sel(Energy=slice(min_plot_num_en, max_plot_num_en)).sum())
     else:
-        data_right = data_right*(data_left.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)).sum(
-        )/data_right.sel(energy_corr=slice(min_plot_num_en, max_plot_num_en)).sum())
+        data_right = data_right*(data_left.sel(Energy=slice(min_plot_num_en, max_plot_num_en)).sum(
+        )/data_right.sel(Energy=slice(min_plot_num_en, max_plot_num_en)).sum())
     return data_left, data_right
 
 def ds_time_b(t_0, start, stop, steps, rep, expt):
