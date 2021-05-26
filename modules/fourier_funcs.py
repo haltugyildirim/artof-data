@@ -27,11 +27,11 @@ def data_selection_polar_fourier(right_data,left_data,min_plot_num_en,max_plot_n
     #If the dataset is delay, than this part is for selection of the corresponding part of data. Otherwise
     #(image or dichroism) this justget rid of the extra coordinate of delay, that only carries a single value
     if data_type == 'dichroism':
-        data_in = cdad_shc_just_func(right_data,left_data,min_plot_num_en,max_plot_num_en,av=av).sum(dim='delay')
-    elif data_type == 'delay':
+        data_in = cdad_shc_just_func(right_data,left_data,min_plot_num_en,max_plot_num_en,av=av).sum(dim='Delay')
+    elif data_type == 'Delay':
         data_in = right_data.sel(Delay = delay_input, method="nearest")
     else:
-        data_in = right_data.sum(dim='delay')
+        data_in = right_data.sum(dim='Delay')
 
     #center of the data from k points. k_x and k_y center should be
     x_off = find_nearest_index(data_in.y, 0)
