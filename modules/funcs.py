@@ -424,8 +424,6 @@ def expdecay(t, tau, t_0):
 
     t_0 -> time-zero where time is zero, a singularity where nothing happens.
     """
-    # C is the offset
-    # t_0 is t zero
     f = np.zeros(t.size)
     for i in range(t.size):
         val = (t[i] >= t_0)*np.exp((t_0-t[i])/tau)
